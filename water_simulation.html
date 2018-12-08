@@ -258,7 +258,7 @@
 				sun2.position.set( - 100, 350, - 200 );
 				scene.add( sun2 );
 
-                var geometry = new THREE.CubeGeometry(10000, 10000, 10000);
+                var geometry = new THREE.CubeGeometry(1000, 1000, 1000);
                 var cubeMaterials = [
                     new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/qCD4dym.jpg"), side: THREE.DoubleSide}),
                     new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/qCD4dym.jpg"), side: THREE.DoubleSide}),
@@ -271,20 +271,7 @@
                 var cubeMaterial = new THREE.MeshFaceMaterial(cubeMaterials);
                 var cube = new THREE.Mesh(geometry, cubeMaterial);
                 scene.add(cube);
-                /*var materialArray = [];
-                materialArray.push(new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./blue-clouds-day-53594.png')}));
-                materialArray.push(new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./blue-clouds-day-53594.png')}));
-                materialArray.push(new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./blue-clouds-day-53594.png')}));
-                materialArray.push(new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./blue-clouds-day-53594.png')}));
-                materialArray.push(new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./blue-clouds-day-53594.png')}));
-                materialArray.push(new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./blue-clouds-day-53594.png')}));
-                for(var i = 0; i < 6; i++){
-                    materialArray[i].side = THREE.Backside;
-                }
-                var skyboxMaterial = new THREE.MeshFaceMaterial(materialArray);
-                var skyboxGeom = new THREE.MeshFaceMaterial(5000, 5000, 5000, 1, 1, 1);
-                var skybox = new THREE.Mesh(skyboxGeom, skyboxMaterial);
-                scene.add( skybox );*/
+
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
@@ -334,7 +321,7 @@
 			}
 			function initWater() {
 				var materialColor = 0x0040C0;
-				var geometry = new THREE.PlaneBufferGeometry( BOUNDS, BOUNDS, WIDTH - 1, WIDTH - 1 );
+				var geometry = new THREE.PlaneBufferGeometry( 1000, 1000, WIDTH - 1, WIDTH - 1 );
 				// material: make a ShaderMaterial clone of MeshPhongMaterial, with customized vertex shader
 				var material = new THREE.ShaderMaterial( {
 					uniforms: THREE.UniformsUtils.merge( [
@@ -446,6 +433,8 @@
 					gpuCompute.doRenderTarget( smoothShader, currentRenderTarget );
 				}
 			}
+
+
 			function createSpheres() {
 				var sphereTemplate = new THREE.Mesh( new THREE.SphereBufferGeometry( 4, 24, 12 ), new THREE.MeshPhongMaterial( { color: 0xFFFF00 } ) );
 				for ( var i = 0; i < NUM_SPHERES; i ++ ) {
