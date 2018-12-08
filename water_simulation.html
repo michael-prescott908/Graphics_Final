@@ -239,6 +239,22 @@
 				var j = Math.pow( 2, i );
 				options += '<a href="#" onclick="return change(' + j + ')">' + j + 'x' + j + '</a> ';
 			}
+
+			// Particle set up
+			// create the particle variables
+			var particleCount = 1800,
+			particles = new THREE.Geometry(),
+			pMaterial = new THREE.ParticleBasicMaterial({
+			color: 0x000088,
+			size: 20,
+			map: new THREE.TextureLoader().load(
+				"https://i.imgur.com/ROZaUXl.png"),
+			blending: THREE.AdditiveBlending,
+			transparent: true
+			});
+			var particleSystem;
+			var particlePosition = 50;
+			var doneWLoop = false;
 			document.getElementById( 'options' ).innerHTML = options;
 			init();
 			animate();
@@ -300,7 +316,7 @@
 					heightmapVariable.material.uniforms.mouseSize.value = effectController.mouseSize;
 					heightmapVariable.material.uniforms.viscosityConstant.value = effectController.viscosity;
 					spheresEnabled = effectController.spheresEnabled;
-					for ( var i = 0; i < NUM_SPHERES; i ++ ) {
+					for ( var i = 0; i < NUM_SPHERES * 3; i ++ ) {
 						if ( spheres[ i ] ) {
 							spheres[ i ].visible = spheresEnabled;
 						}
@@ -317,6 +333,8 @@
 				gui.add( buttonSmooth, 'smoothWater' );
 				initWater();
 				createSpheres();
+				createAnvil();
+				createMiddle();
 				valuesChanger();
 			}
 			function initWater() {
@@ -339,7 +357,7 @@
 				material.specular = new THREE.Color( 0x111111 );
 				material.shininess = 50;
 				material.transparent = true;
-				material.opacity = .96;
+				material.opacity = .5;
 				// Sets the uniforms with the material values
 				material.uniforms.diffuse.value = material.color;
 				material.uniforms.specular.value = material.specular;
@@ -369,6 +387,33 @@
 				geometry.translate(0, -250, 0);
 				var cube = new THREE.Mesh( geometry, material );
 				scene.add( cube );
+
+				// now create the individual particles
+				for (var p = 0; p < particleCount; p++) {
+
+  			// create a particle with random
+  			// position values, -250 -> 250
+  			var pX = Math.random() * 1000 - 500,
+      	pY = Math.random() * 500 - 500,
+      	pZ = Math.random() * 1000 - 500,
+      	particle = new THREE.Vector3(pX, pY, pZ);
+				particle.velocity = new THREE.Vector3(
+  			0,              // x
+  			Math.random(), // y: random vel
+  			0);
+  			// add it to the geometry
+  			particles.vertices.push(particle);
+				}
+
+				// create the particle system
+				particleSystem = new THREE.Points(
+    		particles,
+    		pMaterial);
+				particleSystem.sortParticles = true;
+
+				// add it to the scene
+				scene.add(particleSystem);
+
 				// Creates the gpu computation class and sets it up
 				gpuCompute = new GPUComputationRenderer( WIDTH, WIDTH, renderer );
 				var heightmap0 = gpuCompute.createTexture();
@@ -446,7 +491,7 @@
 
 
 			function createSpheres() {
-				var sphereTemplate = new THREE.Mesh( new THREE.SphereBufferGeometry( 4, 24, 12 ), new THREE.MeshPhongMaterial( { color: 0xFFFF00 } ) );
+				var sphereTemplate = new THREE.Mesh( new THREE.BoxGeometry( 10, 10, 10 ), new THREE.MeshPhongMaterial( {  map: new THREE.TextureLoader().load("https://i.imgur.com/IPcmVFn.jpg") } ) );
 				for ( var i = 0; i < NUM_SPHERES; i ++ ) {
 					var sphere = sphereTemplate;
 					if ( i < NUM_SPHERES - 1 ) {
@@ -455,6 +500,7 @@
 					sphere.position.x = ( Math.random() - 0.5 ) * BOUNDS * 0.7;
 					sphere.position.z = ( Math.random() - 0.5 ) * BOUNDS * 0.7;
 					sphere.userData.velocity = new THREE.Vector3();
+					sphere.overdraw = true;
 					scene.add( sphere );
 					spheres[ i ] = sphere;
 				}
@@ -478,6 +524,118 @@
 						var pos = sphere.position;
 						// Set height
 						pos.y = pixels[ 0 ];
+						// Move sphere
+						waterNormal.multiplyScalar( 0.1 );
+						sphere.userData.velocity.add( waterNormal );
+						sphere.userData.velocity.multiplyScalar( 0.998 );
+						pos.add( sphere.userData.velocity );
+						if ( pos.x < - BOUNDS_HALF ) {
+							pos.x = - BOUNDS_HALF + 0.001;
+							sphere.userData.velocity.x *= - 0.3;
+						} else if ( pos.x > BOUNDS_HALF ) {
+							pos.x = BOUNDS_HALF - 0.001;
+							sphere.userData.velocity.x *= - 0.3;
+						}
+						if ( pos.z < - BOUNDS_HALF ) {
+							pos.z = - BOUNDS_HALF + 0.001;
+							sphere.userData.velocity.z *= - 0.3;
+						} else if ( pos.z > BOUNDS_HALF ) {
+							pos.z = BOUNDS_HALF - 0.001;
+							sphere.userData.velocity.z *= - 0.3;
+						}
+					}
+				}
+			}
+			function createAnvil() {
+				var sphereTemplate = new THREE.Mesh( new THREE.CylinderGeometry( 20, 20, 20, 32 ), new THREE.MeshPhongMaterial( { map: new THREE.TextureLoader().load("https://i.imgur.com/qKOuSyp.jpg") } ) );
+				for ( var i = 0; i < NUM_SPHERES; i ++ ) {
+					var sphere = sphereTemplate;
+					if ( i < NUM_SPHERES - 1 ) {
+						sphere = sphereTemplate.clone();
+				}
+					sphere.position.x = ( Math.random() - 0.5 ) * BOUNDS * 0.7;
+					sphere.position.z = ( Math.random() - 0.5 ) * BOUNDS * 0.7;
+					sphere.userData.velocity = new THREE.Vector3();
+					sphere.overdraw = true;
+					scene.add( sphere );
+					spheres[ i + 5 ] = sphere;
+				}
+			}
+			function anvilDynamics() {
+				var currentRenderTarget = gpuCompute.getCurrentRenderTarget( heightmapVariable );
+				readWaterLevelShader.uniforms.texture.value = currentRenderTarget.texture;
+				var gl = renderer.context;
+				for ( var i = 0; i < NUM_SPHERES; i ++ ) {
+					var sphere = spheres[ i + 5];
+					if ( sphere ) {
+						// Read water level and orientation
+						var u = 0.5 * sphere.position.x / BOUNDS_HALF + 0.5;
+						var v = 1 - ( 0.5 * sphere.position.z / BOUNDS_HALF + 0.5 );
+						readWaterLevelShader.uniforms.point1.value.set( u, v );
+						gpuCompute.doRenderTarget( readWaterLevelShader, readWaterLevelRenderTarget );
+						gl.readPixels( 0, 0, 4, 1, gl.RGBA, gl.UNSIGNED_BYTE, readWaterLevelImage );
+						var pixels = new Float32Array( readWaterLevelImage.buffer );
+						// Get orientation
+						waterNormal.set( pixels[ 1 ], 0, - pixels[ 2 ] );
+						var pos = sphere.position;
+						// Set height
+						pos.y = Math.max(pixels[ 0 ] - 500, -500);
+						// Move sphere
+						waterNormal.multiplyScalar( 0.1 );
+						sphere.userData.velocity.add( waterNormal );
+						sphere.userData.velocity.multiplyScalar( 0.998 );
+						pos.add( sphere.userData.velocity );
+						if ( pos.x < - BOUNDS_HALF ) {
+							pos.x = - BOUNDS_HALF + 0.001;
+							sphere.userData.velocity.x *= - 0.3;
+						} else if ( pos.x > BOUNDS_HALF ) {
+							pos.x = BOUNDS_HALF - 0.001;
+							sphere.userData.velocity.x *= - 0.3;
+						}
+						if ( pos.z < - BOUNDS_HALF ) {
+							pos.z = - BOUNDS_HALF + 0.001;
+							sphere.userData.velocity.z *= - 0.3;
+						} else if ( pos.z > BOUNDS_HALF ) {
+							pos.z = BOUNDS_HALF - 0.001;
+							sphere.userData.velocity.z *= - 0.3;
+						}
+					}
+				}
+			}
+			function createMiddle() {
+				var sphereTemplate = new THREE.Mesh( new THREE.SphereBufferGeometry( 12, 24, 12 ), new THREE.MeshPhongMaterial( {  map: new THREE.TextureLoader().load("https://i.imgur.com/vyBRIoA.jpg", THREE.SphericalRefractionMapping) } ) );
+				for ( var i = 0; i < NUM_SPHERES; i ++ ) {
+					var sphere = sphereTemplate;
+					if ( i < NUM_SPHERES - 1 ) {
+						sphere = sphereTemplate.clone();
+				}
+					sphere.position.x = ( Math.random() - 0.5 ) * BOUNDS * 0.7;
+					sphere.position.z = ( Math.random() - 0.5 ) * BOUNDS * 0.7;
+					sphere.userData.velocity = new THREE.Vector3();
+					sphere.overdraw = true;
+					scene.add( sphere );
+					spheres[ i + 10 ] = sphere;
+				}
+			}
+			function middleDynamics() {
+				var currentRenderTarget = gpuCompute.getCurrentRenderTarget( heightmapVariable );
+				readWaterLevelShader.uniforms.texture.value = currentRenderTarget.texture;
+				var gl = renderer.context;
+				for ( var i = 0; i < NUM_SPHERES; i ++ ) {
+					var sphere = spheres[ i + 10 ];
+					if ( sphere ) {
+						// Read water level and orientation
+						var u = 0.5 * sphere.position.x / BOUNDS_HALF + 0.5;
+						var v = 1 - ( 0.5 * sphere.position.z / BOUNDS_HALF + 0.5 );
+						readWaterLevelShader.uniforms.point1.value.set( u, v );
+						gpuCompute.doRenderTarget( readWaterLevelShader, readWaterLevelRenderTarget );
+						gl.readPixels( 0, 0, 4, 1, gl.RGBA, gl.UNSIGNED_BYTE, readWaterLevelImage );
+						var pixels = new Float32Array( readWaterLevelImage.buffer );
+						// Get orientation
+						waterNormal.set( pixels[ 1 ], 0, - pixels[ 2 ] );
+						var pos = sphere.position;
+						// Set height
+						pos.y = pixels[ 0 ] - 250;
 						// Move sphere
 						waterNormal.multiplyScalar( 0.1 );
 						sphere.userData.velocity.add( waterNormal );
@@ -525,6 +683,8 @@
 				}
 			}
 			function animate() {
+				particleSystem.rotation.y += 0.01;
+
 				requestAnimationFrame( animate );
 				render();
 				stats.update();
@@ -549,6 +709,8 @@
 				gpuCompute.compute();
 				if ( spheresEnabled ) {
 					sphereDynamics();
+					anvilDynamics();
+					middleDynamics();
 				}
 				// Get compute output in custom uniform
 				waterUniforms.heightmap.value = gpuCompute.getCurrentRenderTarget( heightmapVariable ).texture;
