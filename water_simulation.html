@@ -254,18 +254,18 @@
                 var sun = new THREE.DirectionalLight( 0xFFFFFF, 1.0 );
 				sun.position.set( 300, 400, 175 );
 				scene.add( sun );
-				var sun2 = new THREE.DirectionalLight( 0x40A040, 0.6 );
-				sun2.position.set( - 100, 350, - 200 );
-				scene.add( sun2 );
+				//var sun2 = new THREE.DirectionalLight( 0x40A040, 0.6 );
+				//sun2.position.set( - 100, 350, - 200 );
+				//scene.add( sun2 );
 
                 var geometry = new THREE.CubeGeometry(1000, 1000, 1000);
                 var cubeMaterials = [
-                    new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/qCD4dym.jpg"), side: THREE.DoubleSide}),
-                    new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/qCD4dym.jpg"), side: THREE.DoubleSide}),
-                    new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/qCD4dym.jpg"), side: THREE.DoubleSide}),
-                    new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/qCD4dym.jpg"), side: THREE.DoubleSide}),
-                    new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/qCD4dym.jpg"), side: THREE.DoubleSide}),
-                    new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/qCD4dym.jpg"), side: THREE.DoubleSide}),
+										new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/0wIwqOG.jpg"), side: THREE.DoubleSide}),
+										new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/4CZdaLV.jpg"), side: THREE.DoubleSide}),
+										new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/1F5Lf1U.jpg"), side: THREE.DoubleSide}),
+										new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/mrZlV56.png"), side: THREE.DoubleSide}),
+										new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/YSeGuV0.jpg"), side: THREE.DoubleSide}),
+										new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("https://i.imgur.com/p0lvUcr.jpg"), side: THREE.DoubleSide}),
                 ];
 
                 var cubeMaterial = new THREE.MeshFaceMaterial(cubeMaterials);
@@ -338,6 +338,8 @@
 				material.color = new THREE.Color( materialColor );
 				material.specular = new THREE.Color( 0x111111 );
 				material.shininess = 50;
+				material.transparent = true;
+				material.opacity = .96;
 				// Sets the uniforms with the material values
 				material.uniforms.diffuse.value = material.color;
 				material.uniforms.specular.value = material.specular;
@@ -359,6 +361,14 @@
 				meshRay.matrixAutoUpdate = false;
 				meshRay.updateMatrix();
 				scene.add( meshRay );
+				// Under water box
+				var geometry = new THREE.BoxGeometry( 999, 425, 999 );
+				var material = new THREE.MeshBasicMaterial( {color: 0x000066, side: THREE.DoubleSide } );
+				material.transparent = true;
+				material.opacity = .8;
+				geometry.translate(0, -250, 0);
+				var cube = new THREE.Mesh( geometry, material );
+				scene.add( cube );
 				// Creates the gpu computation class and sets it up
 				gpuCompute = new GPUComputationRenderer( WIDTH, WIDTH, renderer );
 				var heightmap0 = gpuCompute.createTexture();
